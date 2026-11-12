@@ -18,6 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [svg, setSvg] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -32,6 +33,9 @@ function Index() {
         body: JSON.stringify({ ...data, sentAt: new Date().toISOString() }),
       });
       if (!res.ok) throw new Error();
+      const text = await res.text();
+      const match = text.replace(/\\"/g, '"').replace(/\\n/g, "\n").match(/<svg[\s\S]*<\/svg>/i);
+      setSvg(match ? match[0] : null);
       form.reset();
       setStatus("ok");
     } catch {
@@ -73,6 +77,15 @@ function Index() {
               {status === "sending" ? "Envoi…" : "Envoyer"}
             </button>
             {status === "ok" && <p className="text-primary">Merci, message envoyé !</p>}
+            {svg && (
+              <div className="rounded-lg border border-border bg-card p-4">
+                <img
+                  alt="Réponse générée"
+                  className="mx-auto max-h-[500px] w-full"
+                  src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`}
+                />
+              </div>
+            )}
             {status === "error" && <p className="text-destructive">Erreur d'envoi, réessayez.</p>}
           </form>
         </div>
